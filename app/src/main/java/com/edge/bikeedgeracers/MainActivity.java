@@ -20,7 +20,7 @@ public class MainActivity extends Activity {
 
     // Native C++ Game Engine JNI bindings
     public native void nativeInitEngine();
-    public native void nativeStartRace(boolean twoWay);
+    public native void nativeStartRace(boolean twoWay, int themeId);
     public native void nativeUpdate(float deltaTime);
     public native void nativeSetInput(boolean throttle, boolean brake, float steer);
     public native float nativeGetSpeed();
@@ -28,6 +28,7 @@ public class MainActivity extends Activity {
     public native float nativeGetDistance();
     public native int nativeGetCoins();
     public native int nativeGetGear();
+    public native int nativeGetTheme();
     public native boolean nativeIsGameOver();
 
     private WebView webView;
@@ -37,7 +38,6 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Initialize Native C++ Game Engine
         nativeInitEngine();
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -52,7 +52,6 @@ public class MainActivity extends Activity {
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
 
-        // Bind C++ Native bridge to JavaScript
         webView.addJavascriptInterface(new NativeGameBridge(), "NativeCppEngine");
 
         webView.setWebViewClient(new WebViewClient());
@@ -63,8 +62,8 @@ public class MainActivity extends Activity {
 
     public class NativeGameBridge {
         @JavascriptInterface
-        public void startRace(boolean twoWay) {
-            nativeStartRace(twoWay);
+        public void startRace(boolean twoWay, int themeId) {
+            nativeStartRace(twoWay, themeId);
         }
 
         @JavascriptInterface

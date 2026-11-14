@@ -12,9 +12,17 @@ enum class GameState {
     GAME_OVER
 };
 
+enum class ThemeArea {
+    CYBER_MOUNTAINS = 0,
+    MUD_WAYS = 1,
+    GOLDEN_DESERT = 2,
+    FROZEN_EMPIRE = 3
+};
+
 class GameEngine {
 public:
     GameState currentState;
+    ThemeArea currentTheme;
     Motorcycle playerBike;
     TrafficSystem traffic;
 
@@ -26,7 +34,7 @@ public:
 
     GameEngine();
     void init();
-    void startRace(bool twoWayMode);
+    void startRace(bool twoWayMode, int themeId);
     void update(float deltaTime);
 
     void setThrottle(bool active) { playerBike.isThrottleActive = active; }
@@ -36,6 +44,7 @@ public:
     float getSpeedKmh() const { return playerBike.currentSpeedKmh; }
     int getGear() const { return playerBike.currentGear; }
     int getRpm() const { return static_cast<int>(playerBike.currentRpm); }
+    int getTheme() const { return static_cast<int>(currentTheme); }
 };
 
 #endif // GAME_ENGINE_H

@@ -18,10 +18,10 @@ Java_com_edge_bikeedgeracers_MainActivity_nativeInitEngine(JNIEnv* env, jobject 
 }
 
 JNIEXPORT void JNICALL
-Java_com_edge_bikeedgeracers_MainActivity_nativeStartRace(JNIEnv* env, jobject thiz, jboolean twoWay) {
+Java_com_edge_bikeedgeracers_MainActivity_nativeStartRace(JNIEnv* env, jobject thiz, jboolean twoWay, jint themeId) {
     if (g_engine) {
-        g_engine->startRace(twoWay);
-        LOGI("Native C++ Race started in mode: %s", twoWay ? "TWO-WAY ONCOMING" : "ONE-WAY");
+        g_engine->startRace(twoWay, themeId);
+        LOGI("Native C++ Race started: Mode=%s, ThemeID=%d", twoWay ? "TWO-WAY" : "ONE-WAY", themeId);
     }
 }
 
@@ -64,6 +64,11 @@ Java_com_edge_bikeedgeracers_MainActivity_nativeGetCoins(JNIEnv* env, jobject th
 JNIEXPORT jint JNICALL
 Java_com_edge_bikeedgeracers_MainActivity_nativeGetGear(JNIEnv* env, jobject thiz) {
     return g_engine ? g_engine->getGear() : 1;
+}
+
+JNIEXPORT jint JNICALL
+Java_com_edge_bikeedgeracers_MainActivity_nativeGetTheme(JNIEnv* env, jobject thiz) {
+    return g_engine ? g_engine->getTheme() : 0;
 }
 
 JNIEXPORT jboolean JNICALL
