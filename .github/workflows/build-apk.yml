@@ -1,0 +1,42 @@
+name: Build Bike Edge Racers APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build Android APK with Gradle
+        run: |
+          gradle assembleDebug --no-daemon --stacktrace
+
+      - name: Prepare APK Output
+        run: |
+          mkdir -p release-output
+          cp app/build/outputs/apk/debug/app-debug.apk release-output/BikeEdgeRacers.apk
+
+      - name: Upload BikeEdgeRacers APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BikeEdgeRacers-APK
+          path: release-output/BikeEdgeRacers.apk
+          retention-days: 14
