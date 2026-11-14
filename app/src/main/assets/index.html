@@ -150,6 +150,7 @@
 </style>
 <script src="three.min.js"></script>
 <script src="GLTFLoader.js"></script>
+<script src="DRACOLoader.js"></script>
 </head>
 <body>
 
@@ -364,10 +365,10 @@
 // GAME STATE & PERSISTENCE
 // ==========================================
 const BIKES = [
-  { id: 0, name: 'STREET BLADE 400', cost: 0, topSpeed: 160, accel: 28, handling: 8.5, braking: 45, unlocked: true, colors: ['#0284c7', '#dc2626', '#16a34a', '#f59e0b', '#111827'], selectedColor: '#0284c7' },
-  { id: 1, name: 'APEX VELOCE 800', cost: 2500, topSpeed: 195, accel: 38, handling: 10.0, braking: 55, unlocked: false, colors: ['#16a34a', '#06b6d4', '#e11d48', '#8b5cf6', '#0f172a'], selectedColor: '#16a34a' },
-  { id: 2, name: 'MONSTER V-TWIN 1000', cost: 6000, topSpeed: 230, accel: 48, handling: 9.2, braking: 65, unlocked: false, colors: ['#dc2626', '#fbbf24', '#0284c7', '#4b5563', '#1e1b4b'], selectedColor: '#dc2626' },
-  { id: 3, name: 'INFERNO TURBO 1300', cost: 12000, topSpeed: 265, accel: 62, handling: 11.5, braking: 80, unlocked: false, colors: ['#f59e0b', '#000000', '#38bdf8', '#ef4444', '#10b981'], selectedColor: '#f59e0b' }
+  { id: 0, name: 'BMW R12 BOXER CRUSHER', cost: 0, topSpeed: 180, accel: 34, handling: 9.5, braking: 52, unlocked: true, colors: ['#0284c7', '#dc2626', '#16a34a', '#f59e0b', '#111827'], selectedColor: '#0284c7' },
+  { id: 1, name: 'DUCATI SUPERSPORT 950', cost: 2500, topSpeed: 215, accel: 44, handling: 10.5, braking: 62, unlocked: false, colors: ['#dc2626', '#06b6d4', '#16a34a', '#8b5cf6', '#0f172a'], selectedColor: '#dc2626' },
+  { id: 2, name: 'HONDA CB RACER', cost: 6000, topSpeed: 245, accel: 54, handling: 10.0, braking: 72, unlocked: false, colors: ['#dc2626', '#fbbf24', '#0284c7', '#4b5563', '#1e1b4b'], selectedColor: '#dc2626' },
+  { id: 3, name: 'KAWASAKI NINJA H2R', cost: 12000, topSpeed: 285, accel: 70, handling: 12.0, braking: 88, unlocked: false, colors: ['#16a34a', '#000000', '#38bdf8', '#ef4444', '#f59e0b'], selectedColor: '#16a34a' }
 ];
 
 let playerWallet = parseInt(localStorage.getItem('ber_coins') || '1500');
@@ -516,34 +517,40 @@ for (let z = -380; z < 380; z += 12) {
 // ==========================================
 // REAL 3D GLTF/GLB MODEL LOADER & ASSET POOL
 // ==========================================
+const dracoLoader = new THREE.DRACOLoader();
+dracoLoader.setDecoderPath('draco/');
 const gltfLoader = new THREE.GLTFLoader();
+gltfLoader.setDRACOLoader(dracoLoader);
+
 const loadedModelTemplates = {};
 let modelsLoadedCount = 0;
 
 const MODEL_DEFS = {
-  // 4 Player Superbikes
-  'bike_0': { path: 'models/real_motorcycle.glb', targetLen: 2.3, isBike: true },
-  'bike_1': { path: 'models/superbike_kenney.glb', targetLen: 2.2, isBike: true },
-  'bike_2': { path: 'models/real_scooter.glb', targetLen: 2.1, isBike: true },
-  'bike_3': { path: 'models/motorcycle_honda.glb', targetLen: 2.3, isBike: true },
+  // 4 Realistic Player Superbikes
+  'bike_0': { path: 'models/real_bmw_r12.glb', targetLen: 2.3, isBike: true, rotY: Math.PI / 2 },
+  'bike_1': { path: 'models/real_motorcycle.glb', targetLen: 2.2, isBike: true, rotY: Math.PI },
+  'bike_2': { path: 'models/motorcycle_honda.glb', targetLen: 2.3, isBike: true, rotY: 0 },
+  'bike_3': { path: 'models/superbike_kenney.glb', targetLen: 2.2, isBike: true, rotY: Math.PI },
 
-  // Highway Traffic Vehicles
-  'sportscar': { path: 'models/real_sportscar.glb', targetLen: 4.6, isTruck: false },
+  // Authentic Photorealistic Traffic Vehicles
+  'bmw_i8': { path: 'models/real_bmw_i8.glb', targetLen: 4.8, isTruck: false, rotX: -Math.PI / 2, rotY: Math.PI },
+  'mercedes_c63': { path: 'models/real_mercedes_c63.glb', targetLen: 4.8, isTruck: false },
+  'nissan_z': { path: 'models/real_nissan_z.glb', targetLen: 4.6, isTruck: false, rotX: -Math.PI / 2, rotY: Math.PI },
+  'tesla': { path: 'models/real_tesla.glb', targetLen: 4.7, isTruck: false },
+  'pickup_hd': { path: 'models/real_pickup_hd.glb', targetLen: 5.2, isTruck: false },
   'corvette': { path: 'models/real_c7corvette.glb', targetLen: 4.6, isTruck: false },
   'orange_tuner': { path: 'models/real_orange_tuner.glb', targetLen: 4.6, isTruck: false },
   'policecar': { path: 'models/real_policecar.glb', targetLen: 4.8, isTruck: false },
   'suv': { path: 'models/real_suv.glb', targetLen: 4.8, isTruck: false },
   'sedan': { path: 'models/real_sedan.glb', targetLen: 4.6, isTruck: false },
-  'semitruck': { path: 'models/real_semitruck.glb', targetLen: 11.5, isTruck: true },
-  'pickuptruck': { path: 'models/real_pickuptruck.glb', targetLen: 5.2, isTruck: false },
-  'deliverytruck': { path: 'models/cesium_truck.glb', targetLen: 5.6, isTruck: true, forceXToZ: true },
+  'semitruck': { path: 'models/real_semitruck.glb', targetLen: 12.0, isTruck: true },
 
   // Real 3D Environment & Roadside Models for all 4 Themes
   'skyscraper_a': { path: 'models/skyscraper_a.glb', targetHeight: 28.0, isScenery: true },
   'skyscraper_b': { path: 'models/skyscraper_b.glb', targetHeight: 36.0, isScenery: true },
   'building_a': { path: 'models/building_a.glb', targetHeight: 16.0, isScenery: true },
   'tree_large': { path: 'models/tree_large.glb', targetHeight: 7.0, isScenery: true },
-  'tree_pine': { path: 'models/tree_pine.glb', targetHeight: 8.5, isScenery: true },
+  'tree_pine': { path: 'models/real_pine_hd.glb', targetHeight: 9.0, isScenery: true, rotX: -Math.PI / 2 },
   'tree_snow': { path: 'models/tree_snow.glb', targetHeight: 8.5, isScenery: true },
   'cactus_tall': { path: 'models/cactus_tall.glb', targetHeight: 3.2, isScenery: true },
   'cactus_short': { path: 'models/cactus_short.glb', targetHeight: 1.9, isScenery: true },
@@ -558,11 +565,15 @@ function prepareModelTemplate(rawScene, def) {
   const root = new THREE.Group();
   root.add(rawScene);
 
+  if (def.rotX) rawScene.rotation.x = def.rotX;
+  if (def.rotY) rawScene.rotation.y = def.rotY;
+  if (def.rotZ) rawScene.rotation.z = def.rotZ;
+
   let box = new THREE.Box3().setFromObject(root);
   let size = new THREE.Vector3();
   box.getSize(size);
 
-  if (def.forceXToZ || size.x > size.z * 1.25) {
+  if (def.forceXToZ || (!def.rotY && size.x > size.z * 1.25)) {
     rawScene.rotation.y = Math.PI / 2;
     box = new THREE.Box3().setFromObject(root);
     box.getSize(size);
@@ -978,11 +989,11 @@ const trafficVehicles = [];
 const trafficLanes = [-6.75, -2.25, 2.25, 6.75];
 const carPaints = [0xdc2626, 0x0284c7, 0xf59e0b, 0x16a34a, 0x9333ea, 0x1e293b, 0xf8fafc, 0xfacc15];
 const TRAFFIC_KEYS = [
-  'sportscar', 'corvette', 'orange_tuner', 'policecar',
-  'suv', 'sedan', 'semitruck', 'pickuptruck', 'deliverytruck'
+  'bmw_i8', 'mercedes_c63', 'nissan_z', 'tesla', 'pickup_hd',
+  'corvette', 'orange_tuner', 'policecar', 'suv', 'sedan', 'semitruck'
 ];
 
-function spawnRealisticVehicle(minZ) {
+function spawnRealisticVehicle(spawnZ) {
   let laneIdx = Math.floor(Math.random() * trafficLanes.length);
   let isOncoming = (selectedMode === 'twoway' && laneIdx < 2);
   let color = carPaints[Math.floor(Math.random() * carPaints.length)];
@@ -994,7 +1005,7 @@ function spawnRealisticVehicle(minZ) {
 
   if (loadedModelTemplates[randKey]) {
     const clone = loadedModelTemplates[randKey].clone(true);
-    if (randKey !== 'policecar' && randKey !== 'deliverytruck') {
+    if (randKey !== 'policecar') {
       const tintColor = new THREE.Color(color);
       clone.traverse(node => {
         if (node.isMesh && node.material) {
@@ -1014,9 +1025,11 @@ function spawnRealisticVehicle(minZ) {
 
   if (isOncoming) {
     vehicleGroup.rotation.y = Math.PI;
+  } else {
+    vehicleGroup.rotation.y = 0;
   }
 
-  vehicleGroup.position.set(trafficLanes[laneIdx], 0, minZ + Math.random() * 80 + 50);
+  vehicleGroup.position.set(trafficLanes[laneIdx], 0, spawnZ);
   vehicleGroup.userData = {
     speedKmh: isTruck ? (55 + Math.random() * 20) : (68 + Math.random() * 32),
     isOncoming: isOncoming,
@@ -1030,7 +1043,7 @@ function spawnRealisticVehicle(minZ) {
 function resetTraffic() {
   trafficVehicles.forEach(v => scene.remove(v));
   trafficVehicles.length = 0;
-  for (let i = 0; i < 9; i++) spawnRealisticVehicle(45 + i * 45);
+  for (let i = 0; i < 9; i++) spawnRealisticVehicle(-55 - i * 40);
 }
 
 // ==========================================
@@ -1173,8 +1186,9 @@ function startRace() {
 
   resetTraffic();
   updateActiveBikeModel();
-  camera.position.set(0, 1.45, 0);
-  bikeModel.position.set(0, 0.45, 0.35);
+  camera.position.set(0, 1.35, 0);
+  camera.lookAt(0, 1.18, -60);
+  bikeModel.position.set(0, 0.35, -0.65);
 }
 
 // Touch Handlers
@@ -1324,67 +1338,75 @@ function animate() {
     camera.position.x += inputSteer * (handling * 1.1) * delta;
     camera.position.x = Math.max(-ROAD_WIDTH/2 + 1.2, Math.min(ROAD_WIDTH/2 - 1.2, camera.position.x));
 
-    camera.rotation.z = cockpitTilt * 0.5;
-    bikeModel.position.set(camera.position.x, 0.45, 0.35);
-    bikeModel.rotation.y = -inputSteer * 0.12;
-    bikeModel.rotation.z = cockpitTilt;
+    if (speedKmh > 120) {
+      camera.position.y = 1.35 + (Math.random() - 0.5) * 0.02 * (speedKmh / maxSpeed);
+    } else {
+      camera.position.y = 1.35;
+    }
+    camera.position.z = 0;
 
-    // Move Road Markings & Themed Objects
+    camera.lookAt(camera.position.x, 1.18, -60);
+    camera.rotation.z = cockpitTilt * 0.45;
+
+    bikeModel.position.set(camera.position.x, 0.35, -0.65);
+    bikeModel.rotation.set(0, -inputSteer * 0.12, cockpitTilt);
+
+    // Move Road Markings & Themed Objects towards player (+Z)
     laneMarkings.forEach(m => {
-      m.position.z -= speedMs * delta;
-      if (m.position.z < camera.position.z - 50) m.position.z += ROAD_LEN;
+      m.position.z += speedMs * delta;
+      if (m.position.z > 30) {
+        m.position.z -= ROAD_LEN;
+      }
     });
 
     themedObjects.forEach(obj => {
-      obj.position.z -= speedMs * delta;
-      if (obj.position.z < camera.position.z - 50) obj.position.z += 600;
+      obj.position.z += speedMs * delta;
+      if (obj.position.z > 40) {
+        obj.position.z -= 600;
+      }
     });
 
-    // Particle Animation
+    // Particle Animation towards player (+Z)
     const positions = particleSystem.geometry.attributes.position.array;
     for (let i = 0; i < particleCount * 3; i += 3) {
-      positions[i+2] -= (speedMs * 0.7 + 10) * delta;
+      positions[i+2] += (speedMs * 0.8 + 12) * delta;
       if (currentThemeId === 3) positions[i+1] -= 5 * delta;
-      if (positions[i+2] < camera.position.z - 30) positions[i+2] = camera.position.z + 70;
-      if (positions[i+1] < 0) positions[i+1] = 20;
+      if (positions[i+2] > 20) {
+        positions[i+2] = -90 - Math.random() * 40;
+        positions[i] = camera.position.x + (Math.random() - 0.5) * 40;
+        positions[i+1] = Math.random() * 15;
+      }
     }
     particleSystem.geometry.attributes.position.needsUpdate = true;
 
-    // Traffic Simulation & Proximity Checking
+    // Traffic Simulation & Proximity Checking (ahead at -Z)
     for (let i = trafficVehicles.length - 1; i >= 0; i--) {
       const v = trafficVehicles[i];
       const carSpeedMs = v.userData.speedKmh / 3.6;
-      const relSpeed = v.userData.isOncoming ? (-carSpeedMs - speedMs) : (carSpeedMs - speedMs);
+      const relSpeed = v.userData.isOncoming ? (speedMs + carSpeedMs) : (speedMs - carSpeedMs);
 
       v.position.z += relSpeed * delta;
 
       const dx = Math.abs(v.position.x - camera.position.x);
       const dz = Math.abs(v.position.z - camera.position.z);
 
-      if (!v.userData.hasNearMissed && dz < 2.4 && dx < 2.3 && dx > 1.05 && speedKmh > 90) {
+      if (!v.userData.hasNearMissed && dz < 2.6 && dx < 2.4 && dx > 1.15 && speedKmh > 85) {
         v.userData.hasNearMissed = true;
         triggerNearMiss(v.userData.isOncoming);
       }
 
-      if (dz < 2.2 && dx < 1.05) {
+      if (dz < 2.4 && dx < 1.15) {
         triggerCrash();
         return;
       }
 
-      if (v.position.z < camera.position.z - 40 || v.position.z > camera.position.z + 400) {
+      if (v.position.z > 35 || v.position.z < -450) {
         scene.remove(v);
         trafficVehicles.splice(i, 1);
-        spawnRealisticVehicle(camera.position.z + 200);
+        spawnRealisticVehicle(-180 - Math.random() * 120);
       }
     }
 
-    if (speedKmh > 120) {
-      camera.position.y = 1.45 + (Math.random() - 0.5) * 0.02 * (speedKmh / maxSpeed);
-    } else {
-      camera.position.y = 1.45;
-    }
-
-    camera.rotation.x = 0; camera.rotation.y = 0;
     renderer.render(scene, camera);
   }
 }
