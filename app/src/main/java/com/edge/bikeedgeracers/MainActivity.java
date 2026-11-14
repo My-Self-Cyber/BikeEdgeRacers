@@ -8,11 +8,28 @@ import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
+    static {
+        System.loadLibrary("bike_edge_racers");
+    }
+
+    // Native C++ Game Engine JNI bindings
+    public native void nativeInitEngine();
+    public native void nativeStartRace(boolean twoWay);
+    public native void nativeUpdate(float deltaTime);
+    public native void nativeSetInput(boolean throttle, boolean brake, float steer);
+    public native float nativeGetSpeed();
+    public native int nativeGetScore();
+    public native float nativeGetDistance();
+    public native int nativeGetCoins();
+    public native int nativeGetGear();
+    public native boolean nativeIsGameOver();
+
     private WebView webView;
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -20,9 +37,10 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Keep screen active
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        // Initialize Native C++ Game Engine
+        nativeInitEngine();
 
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         hideSystemUI();
 
         webView = new WebView(this);
@@ -34,10 +52,45 @@ public class MainActivity extends Activity {
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
 
+        // Bind C++ Native bridge to JavaScript
+        webView.addJavascriptInterface(new NativeGameBridge(), "NativeCppEngine");
+
         webView.setWebViewClient(new WebViewClient());
         webView.loadUrl("file:///android_asset/index.html");
 
         setContentView(webView);
+    }
+
+    public class NativeGameBridge {
+        @JavascriptInterface
+        public void startRace(boolean twoWay) {
+            nativeStartRace(twoWay);
+        }
+
+        @JavascriptInterface
+        public void setInput(boolean throttle, boolean brake, float steer) {
+            nativeSetInput(throttle, brake, steer);
+        }
+
+        @JavascriptInterface
+        public float getSpeed() {
+            return nativeGetSpeed();
+        }
+
+        @JavascriptInterface
+        public int getScore() {
+            return nativeGetScore();
+        }
+
+        @JavascriptInterface
+        public int getGear() {
+            return nativeGetGear();
+        }
+
+        @JavascriptInterface
+        public boolean isGameOver() {
+            return nativeIsGameOver();
+        }
     }
 
     private void hideSystemUI() {

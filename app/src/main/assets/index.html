@@ -873,6 +873,9 @@ let inputGas = false, inputBrake = false, inputSteer = 0;
 
 function startRace() {
   initAudio();
+  if (window.NativeCppEngine) {
+    window.NativeCppEngine.startRace(selectedMode === 'twoway');
+  }
   setScreen('screen-gameplay');
   currentGameState = 'gameplay';
 
@@ -1004,6 +1007,9 @@ function animate() {
 
   // GAMEPLAY 1ST PERSON LOOP
   if (currentGameState === 'gameplay') {
+    if (window.NativeCppEngine) {
+      window.NativeCppEngine.setInput(inputGas, inputBrake, inputSteer);
+    }
     const bike = BIKES[activeBikeIndex];
 
     // Speed Dynamics
