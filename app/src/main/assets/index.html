@@ -538,7 +538,18 @@ const MODEL_DEFS = {
   'pickuptruck': { path: 'models/real_pickuptruck.glb', targetLen: 5.2, isTruck: false },
   'deliverytruck': { path: 'models/cesium_truck.glb', targetLen: 5.6, isTruck: true, forceXToZ: true },
 
-  // Roadside 3D Scenery
+  // Real 3D Environment & Roadside Models for all 4 Themes
+  'skyscraper_a': { path: 'models/skyscraper_a.glb', targetHeight: 28.0, isScenery: true },
+  'skyscraper_b': { path: 'models/skyscraper_b.glb', targetHeight: 36.0, isScenery: true },
+  'building_a': { path: 'models/building_a.glb', targetHeight: 16.0, isScenery: true },
+  'tree_large': { path: 'models/tree_large.glb', targetHeight: 7.0, isScenery: true },
+  'tree_pine': { path: 'models/tree_pine.glb', targetHeight: 8.5, isScenery: true },
+  'tree_snow': { path: 'models/tree_snow.glb', targetHeight: 8.5, isScenery: true },
+  'cactus_tall': { path: 'models/cactus_tall.glb', targetHeight: 3.2, isScenery: true },
+  'cactus_short': { path: 'models/cactus_short.glb', targetHeight: 1.9, isScenery: true },
+  'rock_large': { path: 'models/rock_large.glb', targetLen: 4.0, isScenery: true },
+  'rock_small': { path: 'models/rock_small.glb', targetLen: 1.6, isScenery: true },
+  'fence_simple': { path: 'models/fence_simple.glb', targetLen: 3.5, isScenery: true },
   'forest': { path: 'models/forest.glb', targetLen: 10.0, isScenery: true },
   'tents': { path: 'models/tents.glb', targetLen: 7.0, isScenery: true }
 };
@@ -557,10 +568,15 @@ function prepareModelTemplate(rawScene, def) {
     box.getSize(size);
   }
 
-  const maxDim = Math.max(size.z, size.x);
-  if (maxDim > 0.001) {
-    const s = def.targetLen / maxDim;
+  if (def.targetHeight && size.y > 0.001) {
+    const s = def.targetHeight / size.y;
     rawScene.scale.set(s, s, s);
+  } else if (def.targetLen) {
+    const maxDim = Math.max(size.z, size.x);
+    if (maxDim > 0.001) {
+      const s = def.targetLen / maxDim;
+      rawScene.scale.set(s, s, s);
+    }
   }
 
   const finalBox = new THREE.Box3().setFromObject(root);
@@ -592,6 +608,9 @@ Object.keys(MODEL_DEFS).forEach(key => {
       const currentBike = BIKES[currentGameState === 'garage' ? previewBikeIndex : activeBikeIndex];
       if (key === 'bike_' + currentBike.id) {
         updateActiveBikeModel();
+      }
+      if (def.isScenery && currentGameState !== 'gameplay') {
+        refreshCurrentTheme();
       }
     } catch(e) {
       console.warn('Template prep failed for ' + key, e);
@@ -743,6 +762,13 @@ function clearThemedAssets() {
   while(mountainGroup.children.length > 0) mountainGroup.remove(mountainGroup.children[0]);
 }
 
+function refreshCurrentTheme() {
+  if (currentThemeId === 0) applyCyberTheme();
+  else if (currentThemeId === 1) applyMudTheme();
+  else if (currentThemeId === 2) applyDesertTheme();
+  else if (currentThemeId === 3) applyFrozenTheme();
+}
+
 function applyCyberTheme() {
   clearThemedAssets();
   currentThemeId = 0;
@@ -757,21 +783,30 @@ function applyCyberTheme() {
   leftRail.material.color.setHex(0xd946ef);
   rightRail.material.color.setHex(0xd946ef);
 
+  // Background Cyber Peaks
   for (let z = -350; z < 350; z += 60) {
-    buildMountain(-55 - Math.random() * 20, z, 1.8, 0x4c1d95);
-    buildMountain(55 + Math.random() * 20, z, 1.8, 0x4c1d95);
+    buildMountain(-65 - Math.random() * 20, z, 2.0, 0x3b0764);
+    buildMountain(65 + Math.random() * 20, z, 2.0, 0x3b0764);
   }
 
-  // Hologram Billboards & Neon Pylons
+  // Real 3D Cyber Skyscrapers & Tech Complexes along highway
+  for (let z = -320; z < 320; z += 55) {
+    [-18, 18].forEach((x, side) => {
+      const bKey = (z % 110 === 0) ? 'skyscraper_b' : (z % 55 === 0 ? 'skyscraper_a' : 'building_a');
+      if (loadedModelTemplates[bKey]) {
+        const bldg = loadedModelTemplates[bKey].clone(true);
+        bldg.position.set(x + (side === 0 ? -5 : 5), 0, z);
+        scene.add(bldg); themedObjects.push(bldg);
+      }
+    });
+  }
+
+  // Neon Cyber Light Pylons
   for (let z = -300; z < 300; z += 50) {
     [-11, 11].forEach(x => {
-      const pylon = new THREE.Mesh(new THREE.BoxGeometry(0.4, 7, 0.4), new THREE.MeshBasicMaterial({ color: 0x06b6d4 }));
+      const pylon = new THREE.Mesh(new THREE.BoxGeometry(0.35, 7, 0.35), new THREE.MeshBasicMaterial({ color: 0x06b6d4 }));
       pylon.position.set(x, 3.5, z);
       scene.add(pylon); themedObjects.push(pylon);
-
-      const board = new THREE.Mesh(new THREE.PlaneGeometry(6, 2.5), new THREE.MeshBasicMaterial({ color: (z % 100 === 0) ? 0xd946ef : 0x06b6d4, side: THREE.DoubleSide }));
-      board.position.set(x > 0 ? x + 2 : x - 2, 6, z);
-      scene.add(board); themedObjects.push(board);
     });
   }
   particleMat.color.setHex(0x06b6d4); particleMat.size = 0.4;
@@ -791,29 +826,35 @@ function applyMudTheme() {
   leftRail.material.color.setHex(0x5d4037);
   rightRail.material.color.setHex(0x5d4037);
 
+  // Background Forest Ridges
   for (let z = -350; z < 350; z += 55) {
-    buildMountain(-50 - Math.random() * 15, z, 1.5, 0x3e2723);
-    buildMountain(50 + Math.random() * 15, z, 1.5, 0x3e2723);
+    buildMountain(-55 - Math.random() * 15, z, 1.6, 0x271c19);
+    buildMountain(55 + Math.random() * 15, z, 1.6, 0x271c19);
   }
 
+  // Real 3D Evergreen Pines, Forest Trees, Fences, Rocks & Tents
   for (let z = -300; z < 300; z += 35) {
-    [-13, 13].forEach((x, side) => {
-      if (loadedModelTemplates['forest']) {
-        const forest = loadedModelTemplates['forest'].clone(true);
-        forest.position.set(x + (side === 0 ? -3 : 3), 0, z);
-        forest.rotation.y = (z % 3);
-        scene.add(forest); themedObjects.push(forest);
-      } else {
-        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 4), new THREE.MeshStandardMaterial({ color: 0x3e2723 }));
-        trunk.position.set(x + (Math.random()-0.5)*2, 2, z);
-        const foliage = new THREE.Mesh(new THREE.ConeGeometry(2.5, 6, 6), new THREE.MeshStandardMaterial({ color: 0x14532d }));
-        foliage.position.set(trunk.position.x, 6, z);
-        scene.add(trunk); scene.add(foliage);
-        themedObjects.push(trunk); themedObjects.push(foliage);
+    [-12, 12].forEach((x, side) => {
+      const treeKey = (z % 70 === 0) ? 'tree_large' : 'tree_pine';
+      if (loadedModelTemplates[treeKey]) {
+        const tree = loadedModelTemplates[treeKey].clone(true);
+        tree.position.set(x + (side === 0 ? -3.5 : 3.5) + (Math.random()-0.5)*2, 0, z);
+        tree.rotation.y = Math.random() * Math.PI * 2;
+        scene.add(tree); themedObjects.push(tree);
       }
-      if (z % 70 === 0 && loadedModelTemplates['tents']) {
+      if (loadedModelTemplates['fence_simple']) {
+        const fence = loadedModelTemplates['fence_simple'].clone(true);
+        fence.position.set(x + (side === 0 ? -0.8 : 0.8), 0, z);
+        scene.add(fence); themedObjects.push(fence);
+      }
+      if (z % 70 === 0 && loadedModelTemplates['rock_large']) {
+        const rock = loadedModelTemplates['rock_large'].clone(true);
+        rock.position.set(x + (side === 0 ? -5 : 5), 0, z + 12);
+        scene.add(rock); themedObjects.push(rock);
+      }
+      if (z % 105 === 0 && loadedModelTemplates['tents']) {
         const tent = loadedModelTemplates['tents'].clone(true);
-        tent.position.set(x + (side === 0 ? -6 : 6), 0, z + 12);
+        tent.position.set(x + (side === 0 ? -8 : 8), 0, z + 18);
         scene.add(tent); themedObjects.push(tent);
       }
     });
@@ -835,24 +876,36 @@ function applyDesertTheme() {
   leftRail.material.color.setHex(0x78350f);
   rightRail.material.color.setHex(0x78350f);
 
+  // Background Desert Canyon Mesas
   for (let z = -350; z < 350; z += 60) {
-    buildMountain(-55 - Math.random() * 20, z, 1.6, 0x9a3412);
-    buildMountain(55 + Math.random() * 20, z, 1.6, 0x9a3412);
+    buildMountain(-55 - Math.random() * 20, z, 1.7, 0x9a3412);
+    buildMountain(55 + Math.random() * 20, z, 1.7, 0x9a3412);
   }
 
-  for (let z = -300; z < 300; z += 40) {
-    [-11, 11].forEach((x, side) => {
-      const cactus = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 5, 8), new THREE.MeshStandardMaterial({ color: 0x15803d }));
-      cactus.position.set(x + (Math.random()-0.5)*2, 2.5, z);
-      scene.add(cactus); themedObjects.push(cactus);
-
-      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.5), new THREE.MeshStandardMaterial({ color: 0x9a3412 }));
-      rock.position.set(x > 0 ? x + 4 : x - 4, 0.8, z + 10);
-      scene.add(rock); themedObjects.push(rock);
-
-      if (z % 80 === 0 && loadedModelTemplates['tents']) {
+  // Real 3D Saguaro Cacti, Short Cacti, Sandstone Rocks & Camps
+  for (let z = -300; z < 300; z += 35) {
+    [-12, 12].forEach((x, side) => {
+      const cKey = (z % 70 === 0) ? 'cactus_tall' : 'cactus_short';
+      if (loadedModelTemplates[cKey]) {
+        const cactus = loadedModelTemplates[cKey].clone(true);
+        cactus.position.set(x + (side === 0 ? -2.5 : 2.5) + (Math.random()-0.5)*2, 0, z);
+        cactus.rotation.y = Math.random() * Math.PI * 2;
+        scene.add(cactus); themedObjects.push(cactus);
+      }
+      const rKey = (z % 70 === 0) ? 'rock_large' : 'rock_small';
+      if (loadedModelTemplates[rKey]) {
+        const rock = loadedModelTemplates[rKey].clone(true);
+        rock.position.set(x + (side === 0 ? -5 : 5), 0, z + 8);
+        scene.add(rock); themedObjects.push(rock);
+      }
+      if (z % 70 === 0 && loadedModelTemplates['fence_simple']) {
+        const fence = loadedModelTemplates['fence_simple'].clone(true);
+        fence.position.set(x + (side === 0 ? -0.8 : 0.8), 0, z);
+        scene.add(fence); themedObjects.push(fence);
+      }
+      if (z % 105 === 0 && loadedModelTemplates['tents']) {
         const camp = loadedModelTemplates['tents'].clone(true);
-        camp.position.set(x + (side === 0 ? -6 : 6), 0, z);
+        camp.position.set(x + (side === 0 ? -7 : 7), 0, z + 15);
         scene.add(camp); themedObjects.push(camp);
       }
     });
@@ -874,32 +927,43 @@ function applyFrozenTheme() {
   leftRail.material.color.setHex(0x7dd3fc);
   rightRail.material.color.setHex(0x7dd3fc);
 
+  // Background Snowy Glacial Peaks
   for (let z = -350; z < 350; z += 55) {
     buildMountain(-50 - Math.random() * 15, z, 1.8, 0xbae6fd);
     buildMountain(50 + Math.random() * 15, z, 1.8, 0xbae6fd);
   }
 
+  // Real 3D Heavy Snow-Covered Pines, Glacial Ice Boulders & Ice Formations
   for (let z = -300; z < 300; z += 35) {
-    [-13, 13].forEach((x, side) => {
-      if (loadedModelTemplates['forest']) {
-        const snowForest = loadedModelTemplates['forest'].clone(true);
-        snowForest.traverse(child => {
-          if (child.isMesh && child.material) {
-            child.material = child.material.clone();
-            if (child.material.color) child.material.color.setHex(0xe0f2fe);
+    [-12, 12].forEach((x, side) => {
+      if (loadedModelTemplates['tree_snow']) {
+        const snowTree = loadedModelTemplates['tree_snow'].clone(true);
+        snowTree.position.set(x + (side === 0 ? -3 : 3) + (Math.random()-0.5)*2, 0, z);
+        snowTree.rotation.y = Math.random() * Math.PI * 2;
+        scene.add(snowTree); themedObjects.push(snowTree);
+      }
+      if (loadedModelTemplates['rock_large']) {
+        const iceRock = loadedModelTemplates['rock_large'].clone(true);
+        iceRock.traverse(node => {
+          if (node.isMesh && node.material) {
+            node.material = node.material.clone();
+            if (node.material.color) node.material.color.setHex(0xa5f3fc);
           }
         });
-        snowForest.position.set(x + (side === 0 ? -3 : 3), 0, z);
-        scene.add(snowForest); themedObjects.push(snowForest);
-      } else {
-        const tree = new THREE.Mesh(new THREE.ConeGeometry(2.4, 6, 6), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 }));
-        tree.position.set(x + (Math.random()-0.5)*2, 3, z);
-        scene.add(tree); themedObjects.push(tree);
+        iceRock.position.set(x + (side === 0 ? -5 : 5), 0, z + 12);
+        scene.add(iceRock); themedObjects.push(iceRock);
       }
-
-      const iceShard = new THREE.Mesh(new THREE.ConeGeometry(0.8, 4, 4), new THREE.MeshPhysicalMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.75 }));
-      iceShard.position.set(x > 0 ? x + 4 : x - 4, 2, z + 8);
-      scene.add(iceShard); themedObjects.push(iceShard);
+      if (loadedModelTemplates['rock_small']) {
+        const iceShard = loadedModelTemplates['rock_small'].clone(true);
+        iceShard.traverse(node => {
+          if (node.isMesh && node.material) {
+            node.material = node.material.clone();
+            if (node.material.color) node.material.color.setHex(0xe0f2fe);
+          }
+        });
+        iceShard.position.set(x + (side === 0 ? -1.5 : 1.5), 0, z + 4);
+        scene.add(iceShard); themedObjects.push(iceShard);
+      }
     });
   }
   particleMat.color.setHex(0xffffff); particleMat.size = 0.45;
